@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ловля пива</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 30px;
+    }
+    .game-column { display: flex; flex-direction: column; align-items: center; }
+    canvas { background: #87cefa; border: 2px solid #000; }
+    .video-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .video-container video {
+      max-width: 90%;
+      max-height: 90%;
+      border: 4px solid white;
+    }
+    .info { margin-top: 10px; font-size: 18px; }
+    .controls { margin-top: 10px; }
+    button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+  
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+  canvas {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+  .info, .controls {
+    text-align: center;
+  }
+  button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+  </style>
+
+  <style>
+    .timer {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 48px;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game-column">
+    <h1>Гра: Ловля пива</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <p>Очки: <span id="score">0</span></p>
+    <p>Рекорд: <span id="bestScore">0</span></p>
+    <p>Життя: <span id="lives">3</span></p>
+    <div class="controls">
+      <button onclick="moveLeft()">←</button>
+      <button onclick="moveRight()">→</button>
+      <button onclick="togglePause()">Пауза</button>
+    </div>
+  </div>
+
+  <div class="video-container" id="videoContainer">
+    <div class="timer" id="videoTimer">60</div>
+    <video id="gameVideo" src="video.mp4"></video>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const bestScoreDisplay = document.getElementById('bestScore');
+    const livesDisplay = document.getElementById('lives');
+    const videoContainer = document.getElementById('videoContainer');
+    const gameVideo = document.getElementById('gameVideo');
+
+    let score = 0;
+    let bestScore = localStorage.getItem('bestScore') || 0;
+    let lives = 3;
+    let isPaused = false;
+    let bottleSpeed = 5;
+    let nextVideoScore = 1000;
+    let videoCurrentTime = 0;
+
+    bestScoreDisplay.textContent = bestScore;
+
+    const player = { x: 175, y: 550, width: 50, height: 20 };
+    const bottle = { x: Math.random() * 350, y: 0, width: 20, height: 40 };
+
+    const catchSound = new Audio('catch.mp3');
+    const failSound = new Audio('fail.mp3');
+    const bgMusic = new Audio('bg.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.2;
+    bgMusic.play();
+
+    function drawPlayer() {
+      ctx.fillStyle = 'brown';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawBottle() {
+      ctx.fillStyle = 'gold';
+      ctx.fillRect(bottle.x, bottle.y, bottle.width, bottle.height);
+    }
+
+    function resetGame() {
+      failSound.play();
+      lives--;
+      if (lives <= 0) {
+        alert("Гру завершено! Починаємо спочатку.");
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('bestScore', bestScore);
+        }
+        score = 0;
+        lives = 3;
+        nextVideoScore = 1000;
+        videoCurrentTime = 0;
+      }
+      bottle.x = Math.random() * 350;
+      bottle.y = 0;
+      scoreDisplay.textContent = score;
+      bestScoreDisplay.textContent = bestScore;
+      livesDisplay.textContent = lives;
+    }
+
+    function playVideoSegment() {
+      isPaused = true;
+      bgMusic.pause();
+      videoContainer.style.display = 'flex';
+      gameVideo.currentTime = videoCurrentTime;
+      gameVideo.play();
+
+      
+      let timeLeft = 60;
+      const timerDisplay = document.getElementById('videoTimer');
+      const countdown = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) clearInterval(countdown);
+      }, 1000);
+
+      setTimeout(() => {
+
+        gameVideo.pause();
+        videoCurrentTime = gameVideo.currentTime;
+        videoContainer.style.display = 'none';
+        bgMusic.play();
+        isPaused = false;
+        update();
+      }, 60000); // 1 хвилина
+    }
+
+    function update() {
+      if (isPaused) return requestAnimationFrame(update);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      drawBottle();
+
+      bottle.y += bottleSpeed;
+      bottleSpeed = Math.min(7, 3 + score / 2000);
+
+      if (bottle.y > canvas.height) {
+        resetGame();
+      } else if (
+        bottle.y + bottle.height >= player.y &&
+        bottle.x + bottle.width >= player.x &&
+        bottle.x <= player.x + player.width
+      ) {
+        catchSound.play();
+        score += 100;
+        scoreDisplay.textContent = score;
+        bottle.y = 0;
+        bottle.x = Math.random() * 350;
+
+        if (score >= nextVideoScore) {
+          nextVideoScore += 1000;
+          playVideoSegment();
+          return;
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') moveLeft();
+      else if (e.key === 'ArrowRight') moveRight();
+      else if (e.key.toLowerCase() === 'p') togglePause();
+    });
+
+    function moveLeft() {
+      if (player.x > 0) player.x -= 20;
+    }
+
+    function moveRight() {
+      if (player.x + player.width < canvas.width) player.x += 20;
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      if (!isPaused) update();
+    }
+
+    update();
+  </script>
+</body>
+</html>
