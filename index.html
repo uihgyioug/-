@@ -35,31 +35,26 @@
     .info { margin-top: 10px; font-size: 18px; }
     .controls { margin-top: 10px; }
     button { padding: 10px 20px; margin: 5px; font-size: 16px; }
-  
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-  }
-  canvas {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-  }
-  .info, .controls {
-    text-align: center;
-  }
-  button {
-    width: 100%;
-    box-sizing: border-box;
-  }
-}
 
-  </style>
-
-  <style>
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+      }
+      .info, .controls {
+        text-align: center;
+      }
+      button {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
     .timer {
       position: absolute;
       top: 20px;
@@ -157,7 +152,6 @@
       gameVideo.currentTime = videoCurrentTime;
       gameVideo.play();
 
-      
       let timeLeft = 60;
       const timerDisplay = document.getElementById('videoTimer');
       const countdown = setInterval(() => {
@@ -167,14 +161,13 @@
       }, 1000);
 
       setTimeout(() => {
-
         gameVideo.pause();
         videoCurrentTime = gameVideo.currentTime;
         videoContainer.style.display = 'none';
         bgMusic.play();
         isPaused = false;
         update();
-      }, 60000); // 1 хвилина
+      }, 60000);
     }
 
     function update() {
@@ -227,6 +220,25 @@
       isPaused = !isPaused;
       if (!isPaused) update();
     }
+
+    // TOUCH CONTROLS
+    let touchStartX = null;
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      if (touchStartX === null) return;
+      const touchX = e.touches[0].clientX;
+      const diffX = touchX - touchStartX;
+      if (Math.abs(diffX) > 30) {
+        if (diffX > 0) moveRight();
+        else moveLeft();
+        touchStartX = touchX;
+      }
+    });
+    canvas.addEventListener('touchend', () => {
+      touchStartX = null;
+    });
 
     update();
   </script>
