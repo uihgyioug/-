@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ловля пива</title>
   <style>
     * { box-sizing: border-box; }
@@ -16,7 +16,7 @@
       gap: 30px;
     }
     .game-column { display: flex; flex-direction: column; align-items: center; }
-    canvas { background: #87cefa; border: 2px solid #000; }
+    canvas { background: #87cefa; border: 2px solid #000; touch-action: none; }
     .video-container {
       position: fixed;
       top: 0; left: 0;
@@ -55,6 +55,7 @@
         box-sizing: border-box;
       }
     }
+
     .timer {
       position: absolute;
       top: 20px;
@@ -65,7 +66,6 @@
     }
   </style>
 </head>
-
 <body>
   <div class="game-column">
     <h1>Гра: Ловля пива</h1>
@@ -208,6 +208,12 @@
       else if (e.key.toLowerCase() === 'p') togglePause();
     });
 
+    canvas.addEventListener('touchstart', (e) => {
+      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+      if (touchX < canvas.width / 2) moveLeft();
+      else moveRight();
+    });
+
     function moveLeft() {
       if (player.x > 0) player.x -= 20;
     }
@@ -220,25 +226,6 @@
       isPaused = !isPaused;
       if (!isPaused) update();
     }
-
-    // TOUCH CONTROLS
-    let touchStartX = null;
-    canvas.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-    });
-    canvas.addEventListener('touchmove', (e) => {
-      if (touchStartX === null) return;
-      const touchX = e.touches[0].clientX;
-      const diffX = touchX - touchStartX;
-      if (Math.abs(diffX) > 30) {
-        if (diffX > 0) moveRight();
-        else moveLeft();
-        touchStartX = touchX;
-      }
-    });
-    canvas.addEventListener('touchend', () => {
-      touchStartX = null;
-    });
 
     update();
   </script>
