@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ловля пива</title>
   <style>
     * { box-sizing: border-box; }
@@ -16,7 +16,7 @@
       gap: 30px;
     }
     .game-column { display: flex; flex-direction: column; align-items: center; }
-    canvas { background: #87cefa; border: 2px solid #000; touch-action: none; }
+    canvas { background: #87cefa; border: 2px solid #000; }
     .video-container {
       position: fixed;
       top: 0; left: 0;
@@ -55,7 +55,6 @@
         box-sizing: border-box;
       }
     }
-
     .timer {
       position: absolute;
       top: 20px;
@@ -66,6 +65,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="game-column">
     <h1>Гра: Ловля пива</h1>
@@ -82,7 +82,7 @@
 
   <div class="video-container" id="videoContainer">
     <div class="timer" id="videoTimer">60</div>
-    <video id="gameVideo" src="video.mp4"></video>
+    <video id="gameVideo" src=""></video>
   </div>
 
   <script>
@@ -100,7 +100,13 @@
     let isPaused = false;
     let bottleSpeed = 5;
     let nextVideoScore = 1000;
-    let videoCurrentTime = 0;
+
+    const videos = [
+      'video1.mp4', 'video2.mp4', 'video3.mp4', 'video4.mp4',
+      'video5.mp4', 'video6.mp4', 'video7.mp4', 'video8.mp4',
+      'video9.mp4', 'video10.mp4', 'video11.mp4', 'video12.mp4'
+    ];
+    let videoIndex = 0;
 
     bestScoreDisplay.textContent = bestScore;
 
@@ -136,7 +142,7 @@
         score = 0;
         lives = 3;
         nextVideoScore = 1000;
-        videoCurrentTime = 0;
+        videoIndex = 0;
       }
       bottle.x = Math.random() * 350;
       bottle.y = 0;
@@ -149,8 +155,11 @@
       isPaused = true;
       bgMusic.pause();
       videoContainer.style.display = 'flex';
-      gameVideo.currentTime = videoCurrentTime;
+
+      gameVideo.src = videos[videoIndex];
+      gameVideo.load();
       gameVideo.play();
+      videoIndex++;
 
       let timeLeft = 60;
       const timerDisplay = document.getElementById('videoTimer');
@@ -162,7 +171,6 @@
 
       setTimeout(() => {
         gameVideo.pause();
-        videoCurrentTime = gameVideo.currentTime;
         videoContainer.style.display = 'none';
         bgMusic.play();
         isPaused = false;
@@ -192,7 +200,7 @@
         bottle.y = 0;
         bottle.x = Math.random() * 350;
 
-        if (score >= nextVideoScore) {
+        if (score >= nextVideoScore && videoIndex < videos.length) {
           nextVideoScore += 1000;
           playVideoSegment();
           return;
@@ -208,12 +216,6 @@
       else if (e.key.toLowerCase() === 'p') togglePause();
     });
 
-    canvas.addEventListener('touchstart', (e) => {
-      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
-      if (touchX < canvas.width / 2) moveLeft();
-      else moveRight();
-    });
-
     function moveLeft() {
       if (player.x > 0) player.x -= 20;
     }
@@ -226,6 +228,24 @@
       isPaused = !isPaused;
       if (!isPaused) update();
     }
+
+    let touchStartX = null;
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      if (touchStartX === null) return;
+      const touchX = e.touches[0].clientX;
+      const diffX = touchX - touchStartX;
+      if (Math.abs(diffX) > 30) {
+        if (diffX > 0) moveRight();
+        else moveLeft();
+        touchStartX = touchX;
+      }
+    });
+    canvas.addEventListener('touchend', () => {
+      touchStartX = null;
+    });
 
     update();
   </script>
